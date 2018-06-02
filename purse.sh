@@ -6,7 +6,8 @@ set -o pipefail
 
 filter="$(command -v grep) -v -E"
 gpg="$(command -v gpg || command -v gpg2)"
-safe="${PWDSH_SAFE:=pwd.sh.safe}"
+safe="${PURSE_SAFE:=.purse}"
+keyid="0xFF3E7D88647EBCDB"
 
 
 fail () {
@@ -43,19 +44,17 @@ get_pass () {
 
 
 decrypt () {
-  # Decrypt with a password.
+  # Decrypt with authorized GPG key.
 
-  echo "${1}" | ${gpg} --armor --batch \
-    --decrypt --passphrase-fd 0 "${2}" 2>/dev/null
+  cat "${1}" | ${gpg} --armor --batch --decrypt 2>/dev/null
 }
 
 
 encrypt () {
-  # Encrypt with a password.
+  # Encrypt to a recipient.
 
-  ${gpg} --armor --batch \
-    --symmetric --yes --passphrase-fd 3 \
-    --output "${2}" "${3}" 3< <(echo "${1}")
+  ${gpg} --encrypt --armor --batch --yes --throw-keyids \
+    --recipient ${keyid} --output "${1}" "${2}"
 }
 
 
@@ -72,23 +71,27 @@ read_pass () {
 
   if [[ -z "${username}" || "${username}" == "all" ]] ; then username="" ; fi
 
-  while [[ -z "${password}" ]] ; do get_pass "
-  Password to unlock ${safe}: " ; done
-  printf "\n\n"
+  prompt_key
+  decrypt ${safe} | grep -F " ${username}" || fail "Decryption failed"
+}
 
-  decrypt ${password} ${safe} | grep -F " ${username}" \
-    || fail "Decryption failed"
+
+prompt_key () {
+  # Print a message when key touch is needed.
+
+  if [[ -f "${safe}" ]] ; then
+    printf "\n  Touch key to decrypt safe ...\n\n"
+  fi
 }
 
 
 gen_pass () {
   # Generate a password.
 
-  len=50
-  max=100
+  len=20
+  max=80
 
   if [[ -z "${3+x}" ]] ; then read -p "
-
   Password length (default: ${len}, max: ${max}): " length
   else
     length="${3}"
@@ -111,8 +114,7 @@ write_pass () {
     entry="${userpass} ${username}"
   fi
 
-  get_pass "
-  Password to unlock ${safe}: " ; echo
+  prompt_key
 
   # If safe exists, decrypt it and filter out username, or bail on error.
   # If successful, append entry, or blank line.
@@ -120,12 +122,11 @@ write_pass () {
   # Finally, encrypt it all to a new safe file, or fail.
   # If successful, update to new safe file.
   ( if [[ -f "${safe}" ]] ; then
-      decrypt ${password} ${safe} | \
-      ${filter} " ${username}$" || return
+      decrypt ${safe} | ${filter} " ${username}$" || return
     fi ; \
     echo "${entry}") | \
     (${filter} "^[[:space:]]*$|^mtime:[[:digit:]]+$";echo mtime:$(date +%s)) | \
-    encrypt ${password} ${safe}.new - || fail "Write to safe failed"
+    encrypt ${safe}.new - || fail "Write to safe failed"
     mv ${safe}{.new,}
 }
 
@@ -144,10 +145,11 @@ new_entry () {
     userpass="${password}"
   fi
 
+  printf "\n"
+
   if [[ -z "${password}" ]] ; then userpass=$(gen_pass "$@")
     if [[ -z "${4+x}" || ! "${4}" =~ ^([qQ])$ ]] ; then
-      echo "
-  Password: ${userpass}"
+      printf "\n  Password: ${userpass}\n"
     fi
   fi
 }
@@ -156,9 +158,11 @@ print_help () {
   # Print help text.
 
   echo "
-  pwd.sh is a shell script to manage passwords with GnuPG symmetric encryption.
+  purse is a shell script to manage passwords with GnuPG asymmetric encryption.
 
-  The script can be run interactively as './pwd.sh' or with the following args:
+  It is recommended to be used with a Yubikey or other hardware token.
+
+  The script can run interactively as './purse.sh' or with the following args:
 
     * 'r' to read a password
     * 'w' to write a password
@@ -173,29 +177,28 @@ print_help () {
 
     * Read all passwords:
 
-      ./pwd.sh r all
+      ./purse.sh r all
 
     * Write a password for 'github':
 
-      ./pwd.sh w github
+      ./purse.sh w github
 
     * Generate a 50 character password for 'github' and write:
 
-      ./pwd.sh w github 50
+      ./purse.sh w github 50
 
     * To suppress the generated password:
 
-      ./pwd.sh w github 50 q
+      ./purse.sh w github 50 q
 
     * Delete password for 'mail':
 
-      ./pwd.sh d mail
+      ./purse.sh d mail
 
   A password cannot be supplied as an argument, nor is used as one throughout
   the script, to prevent it from appearing in process listing or logs.
 
-  To report a bug, visit https://github.com/drduh/pwd.sh
-  "
+  To report a bug, visit https://github.com/drduh/purse"
 }
 
 
