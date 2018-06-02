@@ -1,50 +1,66 @@
-# pwd.sh
+# Purse
 
-Script to manage passwords in an encrypted file using gpg.
+![screencast gif](https://user-images.githubusercontent.com/12475110/40880505-3834ce1c-6667-11e8-89d0-6961886842c6.gif)
 
-![screencast gif](https://i.imgur.com/sQoF3VN.gif)
+Purse is a fork of [pwd.sh](https://github.com/drduh/pwd.sh/).
+
+Both programs are shell scripts which use GPG to manage passwords in an encrypted file. Purse uses asymmetric (public-key) encryption, while pwd.sh uses a symmetric (password) scheme.
+
+While both are reasonably secure by using a trusted crypto implementation (GPG) and safe handling of password input, Purse eliminates the need to remember or use a master password to unlock. Just plug in the key, enter the PIN to unlock it, then touch to decrypt Purse passwords.
+
+By using GPG keys and a hardware token like YubiKey, the risk of master password phishing or keylogging is eliminated; only physical possession of the hardware token AND knowledge of its PIN code may unlock private material.
 
 # Installation
 
-    git clone https://github.com/drduh/pwd.sh
+This script requires an existing GPG key and is intended to be used with a YubiKey or other hardware token for storing the private key.
 
-Requires `gpg` - install with `brew install gpg` or `sudo apt-get install gnupg` or build and install it from [source](https://www.gnupg.org/download/index.html).
+See [YubiKey Guide](https://github.com/drduh/YubiKey-Guide/) for instructions on setting one up.
+
+To install the script:
+
+```
+git clone https://github.com/drduh/purse
+```
+
+Then modify it to use the preferred GPG key ID.
 
 # Use
 
-Run the script interactively using `cd pwd.sh && ./pwd.sh` or symlink to a folder in `$PATH` and run directly.
+`cd purse` and run the script interactively using `./purse.sh`
 
-Type `w` to write a password.
+* Type `w` to write a password.
 
-Type `r` to read a password.
+* Type `r` to read a password.
 
-Type `d` to delete a password.
+* Type `d` to delete a password.
 
 Options can also be passed on the command line.
 
-Create password with length of 30 characters for *gmail*:
+Create password with length of 30 characters for `gmail`:
 
-    ./pwd.sh w gmail 30
+    ./purse.sh w gmail 30
 
 Append `<space>q` to suppress generated password output.
 
-Read password for *user@github*:
+Read password for `user@github`:
 
-    ./pwd.sh r user@github
+    ./purse.sh r user@github
 
-Delete password for *dropbox*:
+Delete password for `reddit`:
 
-    ./pwd.sh d dropbox
+    ./purse.sh d reddit
 
-Copy password for *github* to clipboard on OS X:
+Copy password for `github` to clipboard on macOS:
 
-    ./pwd.sh r github | cut -f 1 -d ' ' | awk 'NR==3{print $1}' | pbcopy
+    ./purse.sh r github | cut -f 1 -d ' ' | awk 'NR==4{print $1}' | pbcopy
 
-The script and encrypted `pwd.sh.safe` file can be safely shared between computers, for example through Google Drive or Dropbox.
+The script and encrypted `.purse` ciphertext file can be publicly shared between computers.
 
 A recommended `~/.gnupg/gpg.conf` configuration file can be found at [drduh/config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf).
 
 # Similar software
+
+[pwd.sh](https://github.com/drduh/pwd.sh/)
 
 [Pass: the standard unix password manager](http://www.passwordstore.org/)
 
