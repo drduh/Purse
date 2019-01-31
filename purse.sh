@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
+# https://github.com/drduh/Purse
 
 set -o errtrace
 set -o nounset
 set -o pipefail
 
+umask 077
+
 filter="$(command -v grep) -v -E"
 gpg="$(command -v gpg || command -v gpg2)"
-safe="${PURSE_SAFE:=.purse}"
+safe="${PURSE_SAFE:=purse.enc}"
 keyid="0xFF3E7D88647EBCDB"
 
 
@@ -61,7 +64,7 @@ encrypt () {
 read_pass () {
   # Read a password from safe.
 
-  if [[ ! -s ${safe} ]] ; then fail "No password safe found" ; fi
+  if [[ ! -s ${safe} ]] ; then fail "${safe} not found" ; fi
 
   if [[ -z "${2+x}" ]] ; then read -r -p "
   Username (Enter for all): " username
@@ -158,20 +161,14 @@ print_help () {
   # Print help text.
 
   echo "
-  purse is a shell script to manage passwords with GnuPG asymmetric encryption.
-
-  It is recommended to be used with a Yubikey or other hardware token.
-
-  The script can run interactively as './purse.sh' or with the following args:
+  Purse is a password manager shell script using GnuPG asymmetric encryption. It is recommended for use with Yubikey or similar hardware token. Purse can be used interactively or with one of the following options:
 
     * 'r' to read a password
     * 'w' to write a password
     * 'd' to delete a password
-    * 'h' to see this help text
+    * 'h' to print this help text
 
-  A username can be supplied as an additional argument or 'all' for all entries.
-
-  For writing, a password length can be appended. Append 'q' to suppress output.
+  A username, password length and 'q' options can also be used.
 
   Examples:
 
@@ -187,7 +184,7 @@ print_help () {
 
       ./purse.sh w github 50
 
-    * To suppress the generated password:
+    * Generate a password and write without displaying it:
 
       ./purse.sh w github 50 q
 
@@ -195,10 +192,7 @@ print_help () {
 
       ./purse.sh d mail
 
-  A password cannot be supplied as an argument, nor is used as one throughout
-  the script, to prevent it from appearing in process listing or logs.
-
-  To report a bug, visit https://github.com/drduh/purse"
+  A password cannot be supplied as an argument, nor is used as one in the script, to prevent it from appearing in process listing or logs."
 }
 
 
