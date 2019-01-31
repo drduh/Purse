@@ -4,23 +4,23 @@
 
 Purse is a fork of [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
 
-Both programs are shell scripts which use [GPG](https://www.gnupg.org/) to manage passwords in an encrypted text file. Purse uses asymmetric (public-key) encryption, while pwd.sh uses symmetric (password) encryption.
+Both programs are shell scripts which use [GPG](https://www.gnupg.org/) to manage passwords in an encrypted text file. Purse uses asymmetric (public-key) authentication, while pwd.sh uses symmetric (password-based) authentication.
 
-While both are reasonably secure by using a trusted crypto implementation (GPG) and safe handling of password input, Purse eliminates the need to remember and use a master password - just plug in a YubiKey, enter the PIN, then touch it to decrypt the password safe to stdout.
+While both scripts use a trusted crypto implementation (GPG) and safely handle passwords (never saving plaintext to disk), Purse eliminates the need to remember and use a master password - just plug in a YubiKey, enter the PIN, then touch it to decrypt the password safe to stdout.
 
-By using GPG keys and a hardware token like YubiKey, the risk of master password phishing or keylogging is eliminated; only physical possession of the hardware token AND knowledge of the PIN can unlock the password safe.
+By using Purse with YubiKey, the risk of master password phishing and keylogging is eliminated - only physical possession of the key AND knowledge of the PIN can unlock the password safe.
 
 # Installation
 
-This script requires an existing GPG key and is intended to be used with a YubiKey or similar hardware token for storing the private key. See [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) for instructions on setting one up.
+This script requires a GPG identity - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up.
 
-To install the script:
+To install Purse:
 
 ```console
 $ git clone https://github.com/drduh/Purse
 ```
 
-Then modify it to use the preferred GPG key ID.
+Edit `purse.sh` to specify your GPG key ID.
 
 # Use
 
