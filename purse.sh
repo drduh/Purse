@@ -17,6 +17,7 @@ gpgconf="${HOME}/.gnupg/gpg.conf"
 backuptar="${PURSE_BACKUP:=purse.$(hostname).$(date +%F).tar}"
 safeix="${PURSE_INDEX:=purse.index}"
 safedir="${PURSE_SAFE:=safe}"
+script="$(basename $BASH_SOURCE)"
 timeout=10
 
 fail () {
@@ -155,11 +156,12 @@ list_entry () {
 }
 
 backup () {
-  # Archive encrypted index and safe directory.
+  # Create an archive for backup.
 
   if [[ -f "${safeix}" ]] ; then
     cp "${gpgconf}" "gpg.conf.${now}"
-    tar cfv "${backuptar}" "${safeix}" "${safedir}" "gpg.conf.${now}"
+    tar cfv "${backuptar}" \
+      "${safeix}" "${safedir}" "gpg.conf.${now}" "${script}"
     rm "gpg.conf.${now}"
   else fail "Nothing to archive" ; fi
 
