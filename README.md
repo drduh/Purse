@@ -10,18 +10,26 @@ By using Purse with YubiKey, the risk of master password theft or keylogging is 
 
 # Release notes
 
-## Version 1 (2018)
+## Version 2b1 (2020)
 
-The original release which has been available for general use and review since June 2018 (forked from pwd.sh which dates to 2015). There are no known bugs nor security vulnerabilities identified in this stable version of purse.sh.  Compatible on Linux, OpenBSD, macOS.
+Minor update to the second release. Currently in beta testing. Compatible on Linux, OpenBSD, macOS.
+
+Changelist:
+
+* Purse now uses a GPG keygroup to encrypt secrets to multiple recipients for improved reliability. The program will prompt for key IDs to define the keygroup; a single key ID can still be used.
+* Encrypted index is now optional and off by default, allowing a single touch to encrypt and decrypt secrets instead of two.
+* GPG configuration file is now included in Purse backup archives.
 
 ## Version 2b (2019)
 
 The second release of purse.sh features several security and reliability improvements, and is an optional upgrade. Currently in beta testing. Compatible on Linux, OpenBSD, macOS.
 
 Known issues:
+
 * Read actions now require two Yubikey touches, if touch to decrypt is enabled - once for the index and twice for the encrypted password file.
 
 Changelist:
+
 * Passwords are now encrypted as individual files, rather than all encrypted as a single flat file.
 * Individual password filenames are random, mapped to usernames in an encrypted index file.
 * Index and password files are now "immutable" using chmod while purse.sh is not running.
@@ -33,15 +41,19 @@ Changelist:
 * Removed option: read all passwords; no use case for having a single command.
 * Removed option: suppress generated password output; should be read from safe to verify save.
 
+## Version 1 (2018)
+
+The original release which has been available for general use and review since June 2018 (forked from pwd.sh which dates to 2015). There are no known bugs nor security vulnerabilities identified in this stable version of purse.sh.  Compatible on Linux, OpenBSD, macOS.
+
 # Use
 
-This script requires a GPG identity - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up.
+This script requires a GPG identity - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up. Multiple identities stored on several YubiKeys are recommended for reliability.
 
 ```console
 $ git clone https://github.com/drduh/Purse
 ```
 
-Set your GPG key ID with `export PURSE_KEYID=0xFF3E7D88647EBCDB` or by editing `purse.sh`.
+(Version 2b and older) Set your GPG key ID with `export PURSE_KEYID=0xFF3E7D88647EBCDB` or by editing `purse.sh`.
 
 `cd purse.sh` and run the script interactively using `./purse.sh` or symlink to a directory in `PATH`:
 
@@ -87,7 +99,7 @@ Restore an archive from backup:
 $ tar xvf purse*tar
 ```
 
-The backup contains only encrypted files and can be publicly shared for use on trusted computers. For additional privacy, the recipient key ID is **not** included in GPG metadata (`throw-keyids` option).
+The backup contains only encrypted passwords and can be publicly shared for use on trusted computers. For additional privacy, the recipient key ID is **not** included in GPG metadata (`throw-keyids` option). The password index file can also be encrypted by changing the `encrypt_index` variable to `true` in the script.
 
 See [drduh/config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf) for additional GPG configuration options.
 

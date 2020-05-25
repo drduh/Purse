@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# https://github.com/drduh/Purse
+# https://github.com/drduh/Purse/blob/master/purse.sh
 
 set -o errtrace
 set -o nounset
@@ -9,19 +9,20 @@ set -o pipefail
 
 umask 077
 
+encrypt_index="false"
 now=$(date +%s)
 copy="$(command -v xclip || command -v pbcopy)"
 gpg="$(command -v gpg || command -v gpg2)"
+gpgconf="${HOME}/.gnupg/gpg.conf"
 backuptar="${PURSE_BACKUP:=purse.$(hostname).$(date +%F).tar}"
-keyid="${PURSE_KEYID:=0xFF3E7D88647EBCDB}"
 safeix="${PURSE_INDEX:=purse.index}"
 safedir="${PURSE_SAFE:=safe}"
-timeout=9
+timeout=10
 
 fail () {
   # Print an error message and exit.
 
-  tput setaf 1 1 1 ; printf "\nError: ${1}\n" ; tput sgr0
+  tput setaf 1 1 1 ; printf "\nError: %s\n" "${1}" ; tput sgr0
   exit 1
 }
 
@@ -55,10 +56,11 @@ decrypt () {
 }
 
 encrypt () {
-  # Encrypt to a recipient.
+  # Encrypt to a group of hidden recipients.
 
   ${gpg} --encrypt --armor --batch --yes --throw-keyids \
-    --recipient ${keyid} --output "${1}" "${2}"
+    --hidden-recipient "purse_keygroup" \
+    --output "${1}" "${2}"
 }
 
 read_pass () {
@@ -73,15 +75,20 @@ read_pass () {
     else username="${2}" ; fi
   done
 
-  prompt_key "index"
+  if [[ "${encrypt_index}" = "true" ]] ; then
+    prompt_key "index"
 
-  spath=$(decrypt ${safeix} | \
-    grep -F "${username}" | tail -n1 | cut -d : -f2) || \
-      fail "Decryption failed"
+    spath=$(decrypt "${safeix}" | \
+      grep -F "${username}" | tail -n1 | cut -d ":" -f2) || \
+        fail "Decryption failed"
+  else
+    spath=$(grep -F "${username}" "${safeix}" | \
+      tail -n1 | cut -d ":" -f2)
+  fi
 
   prompt_key "password"
 
-  clip <(decrypt ${spath} | head -n1) || \
+  clip <(decrypt "${spath}" | head -n1) || \
     fail "Decryption failed"
 }
 
@@ -89,7 +96,7 @@ prompt_key () {
   # Print a message if safe file exists.
 
   if [[ -f "${safeix}" ]] ; then
-    printf "\n  Touch key to access ${1} ...\n\n"
+    printf "\n  Touch key to access %s ...\n" "${1}"
   fi
 }
 
@@ -99,7 +106,7 @@ gen_pass () {
   len=20
   max=80
 
-  if [[ -z "${3+x}" ]] ; then read -p "
+  if [[ -z "${3+x}" ]] ; then read -r -p "
 
   Password length (default: ${len}, max: ${max}): " length
   else length="${3}" ; fi
@@ -107,7 +114,7 @@ gen_pass () {
   if [[ ${length} =~ ^[0-9]+$ ]] ; then len=${length} ; fi
 
   # base64: 4 characters for every 3 bytes
-  ${gpg} --armor --gen-random 0 "$((${max} * 3/4))" | cut -c -"${len}"
+  ${gpg} --armor --gen-random 0 "$((max * 3 / 4))" | cut -c -"${len}"
 }
 
 write_pass () {
@@ -116,18 +123,22 @@ write_pass () {
   fpath=$(tr -dc "[:lower:]" < /dev/urandom | fold -w8 | head -n1)
   spath=${safedir}/${fpath}
   printf '%s\n' "${userpass}" | \
-    encrypt ${spath} - || \
+    encrypt "${spath}" - || \
       fail "Failed to put ${spath}"
 
-  prompt_key "index"
+  if [[ "${encrypt_index}" = "true" ]] ; then
+    prompt_key "index"
 
-  ( if [[ -f "${safeix}" ]] ; then
-      decrypt ${safeix} || return ; fi
-    printf "${username}@${now}:${spath}\n") | \
-    encrypt ${safeix}.${now} - || \
-      fail "Failed to put ${safeix}.${now}"
+    ( if [[ -f "${safeix}" ]] ; then
+        decrypt "${safeix}" || return ; fi
+      printf "%s@%s:%s\n" "${username}" "${now}" "${spath}") | \
+      encrypt "${safeix}.${now}" - || \
+        fail "Failed to put ${safeix}.${now}"
+      mv "${safeix}.${now}" "${safeix}"
+  else
+    printf "%s@%s:%s\n" "${username}" "${now}" "${spath}" >> "${safeix}"
+  fi
 
-  mv ${safeix}{.${now},}
 }
 
 list_entry () {
@@ -135,24 +146,30 @@ list_entry () {
 
   if [[ ! -s ${safeix} ]] ; then fail "${safeix} not found" ; fi
 
-  prompt_key "index"
-
-  decrypt ${safeix} || fail "Decryption failed"
+  if [[ "${encrypt_index}" = "true" ]] ; then
+    prompt_key "index"
+    decrypt "${safeix}" || fail "Decryption failed"
+  else
+    cat "${safeix}"
+  fi
 }
 
 backup () {
   # Archive encrypted index and safe directory.
 
-  if [[ -f ${safeix} && -d ${safedir} ]] ; then \
-    tar cfv ${backuptar} ${safeix} ${safedir}
+  if [[ -f "${safeix}" ]] ; then
+    cp "${gpgconf}" "gpg.conf.${now}"
+    tar cfv "${backuptar}" "${safeix}" "${safedir}" "gpg.conf.${now}"
+    rm "gpg.conf.${now}"
   else fail "Nothing to archive" ; fi
-  printf "\nArchived ${backuptar}\n" ; \
+
+  printf "\nArchived %s \n" "${backuptar}"
 }
 
 clip () {
   # Use clipboard and clear after timeout.
 
-  ${copy} < ${1}
+  ${copy} < "${1}"
 
   printf "\n"
   shift
@@ -162,6 +179,34 @@ clip () {
   done
 
   printf "" | ${copy}
+}
+
+
+setup_keygroup() {
+  # Configure GPG keygroup setting.
+
+  purse_keygroup="group purse_keygroup ="
+  keyid=""
+  recommend="$(${gpg} -K | grep "sec#" | \
+    awk -F "/" '{print $2}' | cut -c-18 | tr "\n" " ")"
+
+  printf "\n  Setting up GPG key group ...
+
+  Found key IDs: %s
+
+  Enter backup key IDs first, preferred key IDs last.
+  " "${recommend}"
+
+  while [[ -z "${keyid}" ]] ; do
+    read -r -p "
+  Key ID or Enter to continue: " keyid
+    if [[ -z "${keyid}" ]] ; then
+      printf "%s\n" "$purse_keygroup" >> "${gpgconf}"
+      break
+    fi
+    purse_keygroup="${purse_keygroup} ${keyid}"
+    keyid=""
+  done
 }
 
 new_entry () {
@@ -216,6 +261,10 @@ print_help () {
 
 if [[ -z ${gpg} && ! -x ${gpg} ]] ; then fail "GnuPG is not available" ; fi
 
+if [[ ! -f ${gpgconf} ]] ; then fail "GnuPG config is not available" ; fi
+
+if [[ -z ${copy} && ! -x ${copy} ]] ; then fail "Clipboard is not available" ; fi
+
 if [[ ! -d ${safedir} ]] ; then mkdir -p ${safedir} ; fi
 
 chmod -R 0600 ${safeix}  2>/dev/null
@@ -241,6 +290,12 @@ elif [[ "${action}" =~ ^([lL])$ ]] ; then
   list_entry
 
 elif [[ "${action}" =~ ^([wW])$ ]] ; then
+  purse_keygroup=$(grep "group purse_keygroup" "${gpgconf}")
+  if [[ -z "${purse_keygroup}" ]] ; then
+    setup_keygroup
+  fi
+  printf "\n  %s\n" "${purse_keygroup}"
+
   new_entry "$@"
   write_pass
 
