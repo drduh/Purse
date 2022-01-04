@@ -121,7 +121,7 @@ gen_pass () {
 write_pass () {
   # Write a password and update index file.
 
-  fpath=$(tr -dc "[:lower:]" < /dev/urandom | fold -w8 | head -n1)
+  fpath=$(LC_LANG=C tr -dc "[:lower:]" < /dev/urandom | fold -w8 | head -n1)
   spath=${safedir}/${fpath}
   printf '%s\n' "${userpass}" | \
     encrypt "${spath}" - || \
