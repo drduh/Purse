@@ -14,6 +14,11 @@ By using Purse with YubiKey, the risk of master password theft or keylogging is 
 
 Minor update to the second release. Currently in beta testing. Compatible on Linux, OpenBSD, macOS.
 
+Known Issues:
+
+* Newer versions of macOS error with `tr: Illegal byte sequence` - see [issue #4](https://github.com/drduh/Purse/issues/4)
+
+
 Changelist:
 
 * Purse now uses a GPG keygroup to encrypt secrets to multiple recipients for improved reliability. The program will prompt for key IDs to define the keygroup; a single key ID can still be used.
@@ -24,7 +29,7 @@ Changelist:
 
 The second release of purse.sh features several security and reliability improvements, and is an optional upgrade. Currently in beta testing. Compatible on Linux, OpenBSD, macOS.
 
-Known issues:
+Known Issues:
 
 * Read actions now require two Yubikey touches, if touch to decrypt is enabled - once for the index and twice for the encrypted password file.
 
