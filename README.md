@@ -4,7 +4,7 @@ Purse is a fork of [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
 
 Both programs are Bash shell scripts which use [GnuPG](https://www.gnupg.org/) to manage passwords and other secrets in encrypted text files. Purse is based on asymmetric (public-key) authentication, while pwd.sh is based on symmetric (password-based) authentication.
 
-While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk, only using shell built-ins to handle passwords), Purse eliminates the need to remember a master password - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
+While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk, only using shell built-ins), Purse eliminates the need to remember a master password - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
 
 # Release notes
 
