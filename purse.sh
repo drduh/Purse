@@ -1,29 +1,33 @@
 #!/usr/bin/env bash
 # https://github.com/drduh/Purse/blob/master/purse.sh
-
 set -o errtrace
 set -o nounset
 set -o pipefail
-
-#set -x # uncomment to debug
+#set -x  # uncomment to debug
 
 umask 077
 
-encrypt_index="false"
-now=$(date +%s)
-copy="$(command -v xclip || command -v pbcopy)"
-gpg="$(command -v gpg || command -v gpg2)"
+cb_timeout=10          # seconds to keep password on clipboard
+daily_backup="false"   # if true, create daily archive on write
+encrypt_index="false"  # if true, requires 2 touches to decrypt
+pass_copy="false"      # if true, keep password on clipboard before write
+pass_len=14            # default password length
+pass_chars="[:alnum:]!@#$%^&*();:+="
+
 gpgconf="${HOME}/.gnupg/gpg.conf"
 backuptar="${PURSE_BACKUP:=purse.$(hostname).$(date +%F).tar}"
 safeix="${PURSE_INDEX:=purse.index}"
 safedir="${PURSE_SAFE:=safe}"
-script="$(basename $BASH_SOURCE)"
-timeout=10
+
+now="$(date +%s)"
+copy="$(command -v xclip || command -v pbcopy)"
+gpg="$(command -v gpg || command -v gpg2)"
+script="$(basename "${BASH_SOURCE}")"
 
 fail () {
   # Print an error message and exit.
 
-  tput setaf 1 1 1 ; printf "\nError: %s\n" "${1}" ; tput sgr0
+  tput setaf 1 ; printf "\nError: %s\n" "${1}" ; tput sgr0
   exit 1
 }
 
@@ -53,7 +57,8 @@ get_pass () {
 decrypt () {
   # Decrypt with GPG.
 
-  cat "${1}" | ${gpg} --armor --batch --decrypt 2>/dev/null
+  cat "${1}" | \
+    ${gpg} --armor --batch --decrypt 2>/dev/null
 }
 
 encrypt () {
@@ -80,17 +85,20 @@ read_pass () {
     prompt_key "index"
 
     spath=$(decrypt "${safeix}" | \
-      grep -F "${username}" | tail -n1 | cut -d ":" -f2) || \
+      grep -F "${username}" | tail -1 | cut -d ":" -f2) || \
         fail "Decryption failed"
   else
     spath=$(grep -F "${username}" "${safeix}" | \
-      tail -n1 | cut -d ":" -f2)
+      tail -1 | cut -d ":" -f2)
   fi
 
   prompt_key "password"
 
-  clip <(decrypt "${spath}" | head -n1) || \
-    fail "Decryption failed"
+  if [[ -s "${spath}" ]] ; then
+    clip <(decrypt "${spath}" | head -1) || \
+      fail "Decryption failed"
+  else fail "Secret not available"
+  fi
 }
 
 prompt_key () {
@@ -104,28 +112,30 @@ prompt_key () {
 gen_pass () {
   # Generate a password using GPG.
 
-  len=20
-  max=80
-
   if [[ -z "${3+x}" ]] ; then read -r -p "
 
-  Password length (default: ${len}, max: ${max}): " length
+  Password length (default: ${pass_len}): " length
   else length="${3}" ; fi
 
-  if [[ ${length} =~ ^[0-9]+$ ]] ; then len=${length} ; fi
+  if [[ ${length} =~ ^[0-9]+$ ]] ; then pass_len=${length} ; fi
 
-  # base64: 4 characters for every 3 bytes
-  ${gpg} --armor --gen-random 0 "$((max * 3 / 4))" | cut -c -"${len}"
+  LC_LANG=C tr -dc "${pass_chars}" < /dev/urandom | \
+    fold -w "${pass_len}" | head -1
 }
 
 write_pass () {
-  # Write a password and update index file.
+  # Write a password and update the index.
 
-  fpath=$(tr -dc "[:lower:]" < /dev/urandom | fold -w8 | head -n1)
-  spath=${safedir}/${fpath}
+  if [[ "${pass_copy}" = "true" ]] ; then
+    clip <(printf '%s' "${userpass}")
+  fi
+
+  fpath="$(LC_LANG=C tr -dc '[:lower:]' < /dev/urandom | fold -w10 | head -1)"
+  spath="${safedir}/${fpath}"
   printf '%s\n' "${userpass}" | \
     encrypt "${spath}" - || \
       fail "Failed to put ${spath}"
+  userpass=""
 
   if [[ "${encrypt_index}" = "true" ]] ; then
     prompt_key "index"
@@ -139,7 +149,6 @@ write_pass () {
   else
     printf "%s@%s:%s\n" "${username}" "${now}" "${spath}" >> "${safeix}"
   fi
-
 }
 
 list_entry () {
@@ -151,21 +160,22 @@ list_entry () {
     prompt_key "index"
     decrypt "${safeix}" || fail "Decryption failed"
   else
+    printf "\n"
     cat "${safeix}"
   fi
 }
 
 backup () {
-  # Create an archive for backup.
+  # Archive index, safe and configuration.
 
-  if [[ -f "${safeix}" ]] ; then
+  if [[ -f "${safeix}" && -d "${safedir}" ]] ; then
     cp "${gpgconf}" "gpg.conf.${now}"
-    tar cfv "${backuptar}" \
+    tar --create --file "${backuptar}" \
       "${safeix}" "${safedir}" "gpg.conf.${now}" "${script}"
     rm "gpg.conf.${now}"
   else fail "Nothing to archive" ; fi
 
-  printf "\nArchived %s \n" "${backuptar}"
+  printf "\nArchived %s\n" "${backuptar}"
 }
 
 clip () {
@@ -175,17 +185,17 @@ clip () {
 
   printf "\n"
   shift
-  while [ $timeout -gt 0 ] ; do
-    printf "\r\033[KPassword on clipboard! Clearing in %.d" $((timeout--))
+  while [ $cb_timeout -gt 0 ] ; do
+    printf "\r\033[KPassword on clipboard! Clearing in %.d" $((cb_timeout--))
     sleep 1
   done
 
+  printf "\n"
   printf "" | ${copy}
 }
 
-
 setup_keygroup() {
-  # Configure GPG keygroup setting.
+  # Configure GPG keygroup.
 
   purse_keygroup="group purse_keygroup ="
   keyid=""
@@ -212,7 +222,7 @@ setup_keygroup() {
 }
 
 new_entry () {
-  # Prompt for new username and/or password.
+  # Prompt for username and password.
 
   username=""
   while [[ -z "${username}" ]] ; do
@@ -226,7 +236,9 @@ new_entry () {
     userpass="${password}"
   fi
 
-  if [[ -z "${password}" ]] ; then userpass=$(gen_pass "$@") ; fi
+  if [[ -z "${password}" ]] ; then
+    userpass=$(gen_pass "$@")
+  fi
 }
 
 print_help () {
@@ -250,7 +262,7 @@ print_help () {
     * Copy the password for 'userName' to clipboard:
         ./purse.sh r userName
 
-    * List stored passwords and copy a previous version:
+    * List stored passwords and copy a specific version:
         ./purse.sh l
         ./purse.sh r userName@1574723625
 
@@ -263,21 +275,21 @@ print_help () {
 
 if [[ -z ${gpg} && ! -x ${gpg} ]] ; then fail "GnuPG is not available" ; fi
 
-if [[ ! -f ${gpgconf} ]] ; then fail "GnuPG config is not available" ; fi
-
 if [[ -z ${copy} && ! -x ${copy} ]] ; then fail "Clipboard is not available" ; fi
 
-if [[ ! -d ${safedir} ]] ; then mkdir -p ${safedir} ; fi
+if [[ ! -f ${gpgconf} ]] ; then fail "GnuPG config is not available" ; fi
 
-chmod -R 0600 ${safeix}  2>/dev/null
-chmod -R 0700 ${safedir} 2>/dev/null
+if [[ ! -d "${safedir}" ]] ; then mkdir -p "${safedir}" ; fi
+
+chmod -R 0600 "${safeix}"  2>/dev/null
+chmod -R 0700 "${safedir}" 2>/dev/null
 
 password=""
 action=""
 if [[ -n "${1+x}" ]] ; then action="${1}" ; fi
 
 while [[ -z "${action}" ]] ; do
-  read -n 1 -p "
+  read -r -n 1 -p "
   Read or Write (or Help for more options): " action
   printf "\n"
 done
@@ -301,8 +313,14 @@ elif [[ "${action}" =~ ^([wW])$ ]] ; then
   new_entry "$@"
   write_pass
 
+  if [[ "${daily_backup}" = "true" ]] ; then
+    if [[ ! -f ${backuptar} ]] ; then
+      backup
+    fi
+  fi
+
 else read_pass "$@" ; fi
 
-chmod -R 0400 ${safeix} ${safedir} 2>/dev/null
+chmod -R 0400 "${safeix}" "${safedir}" 2>/dev/null
 
-tput setaf 2 2 2 ; printf "\nDone\n" ; tput sgr0
+tput setaf 2 ; printf "\nDone\n" ; tput sgr0
