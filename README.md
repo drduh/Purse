@@ -4,9 +4,7 @@ Purse is a fork of [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
 
 Both programs are Bash shell scripts which use [GnuPG](https://www.gnupg.org/) to manage passwords and other secrets in encrypted text files. Purse is based on asymmetric (public-key) authentication, while pwd.sh is based on symmetric (password-based) authentication.
 
-While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk), Purse eliminates the need to remember and use a master password - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
-
-By using Purse with YubiKey, the risk of master password theft or keylogging is eliminated - only physical possession of the Yubikey AND knowledge of the PIN can unlock the encrypted index and password files.
+While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk, only using shell built-ins to handle passwords), Purse eliminates the need to remember a master password - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
 
 # Release notes
 
@@ -27,8 +25,6 @@ Or download the script directly:
 ```console
 wget https://github.com/drduh/Purse/blob/master/purse.sh
 ```
-
-(Version 2b and older) Set the GnuPG key ID with `export PURSE_KEYID=0xFF3E7D88647EBCDB` or by editing `purse.sh`
 
 Run the script interactively using `./purse.sh` or symlink to a directory in `PATH`:
 
@@ -76,6 +72,6 @@ tar xvf purse*tar
 
 **Note** For additional privacy, the recipient key ID is **not** included in metadata (`throw-keyids` option).
 
-The password index file can also be encrypted by changing the `encrypt_index` variable to `true` in the script.
+The password index file can also be encrypted by changing the `encrypt_index` variable to `true` in the script, although two touches will be required for two separate decryption operations.
 
 See [config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf) for additional configuration options.
