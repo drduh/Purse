@@ -105,7 +105,8 @@ read_pass () {
 
   prompt_key "password"
   if [[ -s "${spath}" ]] ; then
-    decrypt "${spath}" || fail "Failed to decrypt ${spath}"
+    clip <(decrypt "${spath}" | head -1) || \
+      fail "Failed to decrypt ${spath}"
   else fail "Secret not available"
   fi
 }
