@@ -19,17 +19,18 @@ clip_timeout="${PURSE_TIME:=10}"       # seconds to clear clipboard/screen
 comment="${PURSE_COMMENT:=}"           # *unencrypted* comment in files
 daily_backup="${PURSE_DAILY:=}"        # daily backup archive on write
 pass_copy="${PURSE_COPY:=}"            # copy password before write
-pass_len="${PURSE_LEN:=14}"            # default generated password length
+pass_len="${PURSE_LEN:=14}"            # default password length
 safe_dir="${PURSE_SAFE:=safe}"         # safe directory name
 safe_ix="${PURSE_INDEX:=purse.index}"  # index file name
 safe_backup="${PURSE_BACKUP:=purse.$(hostname).${today}.tar}"
 
 trap cleanup EXIT INT TERM
 cleanup () {
-  # "Lock" safe on trapped exits.
+  # "Lock" files on trapped exits.
 
   ret=$?
-  chmod -R 0000 "${safe_ix}" "${safe_dir}" 2>/dev/null
+  chmod -R 0000 \
+    "${safe_dir}" "${safe_ix}" 2>/dev/null
   exit ${ret}
 }
 
@@ -53,11 +54,9 @@ get_pass () {
   printf "\n"
 
   while IFS= read -p "${prompt}" -r -s -n 1 char ; do
-    if [[ ${char} == $'\0' ]] ; then
-      break
+    if [[ ${char} == $'\0' ]] ; then break
     elif [[ ${char} == $'\177' ]] ; then
-      if [[ -z "${password}" ]] ; then
-        prompt=""
+      if [[ -z "${password}" ]] ; then prompt=""
       else
         prompt=$'\b \b'
         password="${password%?}"
@@ -126,7 +125,9 @@ gen_pass () {
   Password length (default: ${pass_len}): " length
   else length="${3}" ; fi
 
-  if [[ ${length} =~ ^[0-9]+$ ]] ; then pass_len=${length} ; fi
+  if [[ "${length}" =~ ^[0-9]+$ ]] ; then
+    pass_len="${length}"
+  fi
 
   tr -dc "${pass_chars}" < /dev/urandom | \
     fold -w "${pass_len}" | head -1
@@ -156,7 +157,8 @@ write_pass () {
         mv "${safe_ix}.${now}" "${safe_ix}" || \
           fail "Failed saving ${safe_ix}.${now}"
   else
-    printf "%s@%s:%s\n" "${username}" "${now}" "${spath}" >> "${safe_ix}"
+    printf "%s@%s:%s\n" \
+      "${username}" "${now}" "${spath}" >> "${safe_ix}"
   fi
 }
 
@@ -177,7 +179,7 @@ backup () {
   if [[ ! -f ${safe_backup} ]] ; then
     if [[ -f "${safe_ix}" && -d "${safe_dir}" ]] ; then
       cp "${gpg_conf}" "gpg.conf.${today}"
-      tar cf "${safe_backup}" "${safe_ix}" "${safe_dir}" \
+      tar cf "${safe_backup}" "${safe_dir}" "${safe_ix}" \
         "${BASH_SOURCE}" "gpg.conf.${today}" && \
           printf "\nArchived %s\n" "${safe_backup}"
       rm -f "gpg.conf.${today}"
@@ -249,7 +251,8 @@ new_entry () {
 print_help () {
   # Print help text.
 
-  printf """\nPurse is a Bash shell script to manage passwords with GnuPG asymmetric encryption. It is designed and recommended to be used with YubiKey as the secret key storage.\n
+  printf """
+  Purse is a Bash shell script to manage passwords with GnuPG asymmetric encryption. It is designed and recommended to be used with YubiKey as the secret key storage.\n
   Purse can be used interactively or by passing one of the following options:\n
     * 'w' to write a password
     * 'r' to read a password
@@ -294,9 +297,7 @@ while [[ -z "${action}" ]] ; do read -r -n 1 -p "
   printf "\n"
 done
 
-if [[ "${action}" =~ ^([rR])$ ]] ; then
- read_pass "$@"
-
+if [[ "${action}" =~ ^([rR])$ ]] ; then read_pass "$@"
 elif [[ "${action}" =~ ^([wW])$ ]] ; then
   purse_keygroup="$(grep "group purse_keygroup" "${gpg_conf}")"
   if [[ -z "${purse_keygroup}" ]] ; then
@@ -305,9 +306,7 @@ elif [[ "${action}" =~ ^([wW])$ ]] ; then
   printf "\n  %s\n" "${purse_keygroup}"
   new_entry "$@"
   write_pass
-  if [[ -n "${daily_backup}" && ! -f "${safe_backup}" ]]
-    then backup
-  fi
+  if [[ -n "${daily_backup}" ]] ; then backup ; fi
 elif [[ "${action}" =~ ^([lL])$ ]] ; then list_entry
 elif [[ "${action}" =~ ^([bB])$ ]] ; then backup
 else print_help ; fi
