@@ -78,8 +78,8 @@ Variable | Description | Default | Values
 `PURSE_INDEX` | index file name | `purse.index` | any valid string
 `PURSE_BACKUP` | backup archive file name | `purse.$hostname.$today.tar` | any valid string
 
-**Note** For additional privacy, the recipient key ID is **not** included in metadata (`throw-keyids` option).
+**Note** For additional privacy, the recipient key ID is **not** included in metadata (GnuPG `throw-keyids` option).
 
-The password index file can also be encrypted by changing the `encrypt_index` variable to `true` in the script, although two touches will be required for two separate decryption operations.
+The password index file can also be encrypted by changing the `encrypt_index` variable to `true` in the script, however 2 YubiKey touches will be required (for 2 separate decryption operations).
 
 See [config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf) for additional GnuPG options.

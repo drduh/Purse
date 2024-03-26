@@ -104,7 +104,6 @@ read_pass () {
     tail -1 | cut -d ":" -f2)
   fi
 
-  set -x
   prompt_key "password"
   if [[ -s "${spath}" ]] ; then
     decrypt "${spath}" || fail "Failed to decrypt ${spath}"
@@ -175,13 +174,15 @@ list_entry () {
 backup () {
   # Archive index, safe and configuration.
 
-  if [[ -f "${safe_ix}" && -d "${safe_dir}" ]] ; then
-    cp "${gpg_conf}" "gpg.conf.${today}"
-    tar cf "${safe_backup}" "${safe_ix}" "${safe_dir}" \
-      "${BASH_SOURCE}" "gpg.conf.${today}" && \
-        printf "\nArchived %s\n" "${safe_backup}"
-    rm -f "gpg.conf.${today}"
-  else fail "Nothing to archive" ; fi
+  if [[ ! -f ${safe_backup} ]] ; then
+    if [[ -f "${safe_ix}" && -d "${safe_dir}" ]] ; then
+      cp "${gpg_conf}" "gpg.conf.${today}"
+      tar cf "${safe_backup}" "${safe_ix}" "${safe_dir}" \
+        "${BASH_SOURCE}" "gpg.conf.${today}" && \
+          printf "\nArchived %s\n" "${safe_backup}"
+      rm -f "gpg.conf.${today}"
+    else fail "Nothing to archive" ; fi
+  else warn "${safe_backup} exists, skipping archive" ; fi
 }
 
 clip () {
@@ -192,14 +193,13 @@ clip () {
   else "${copy}" < "${1}" ; fi
 
   printf "\n"
-  while [ "${clip_timeout}" -gt 0 ] ; do
+  while [[ "${clip_timeout}" -gt 0 ]] ; do
     printf "\r\033[K  Password on %s! Clearing in %.d" \
       "${clip_dest}" "$((clip_timeout--))" ; sleep 1
   done
   printf "\r\033[K  Clearing password from %s ..." "${clip_dest}"
 
-  if [[ "${clip_dest}" = "screen" ]] ; then
-    clear
+  if [[ "${clip_dest}" = "screen" ]] ; then clear
   else printf "\n" ; printf "" | "${copy}" ; fi
 }
 
