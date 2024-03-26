@@ -72,8 +72,10 @@ Variable | Description | Default | Values
 `PURSE_LEN` | default generated password length | `14` | any valid integer
 `PURSE_COPY` | copy password to clipboard before write | unset (disabled) | `1` or `true` to enable
 `PURSE_DAILY` | create daily backup archive on write | unset (disabled) | `1` or `true` to enable
+`PURSE_CHARS` | character set for passwords | `[:alnum:]!?@#$%^&*();:+=` | any valid characters
 `PURSE_COMMENT` | **unencrypted** comment to include in index and safe files | unset | any valid string
 `PURSE_DEST` | password output destination, will set to `screen` without clipboard | `clipboard` | `clipboard` or `screen`
+`PURSE_ECHO` | character used to echo password input | `*` | any valid character
 `PURSE_SAFE` | safe directory name | `safe` | any valid string
 `PURSE_INDEX` | index file name | `purse.index` | any valid string
 `PURSE_BACKUP` | backup archive file name | `purse.$hostname.$today.tar` | any valid string

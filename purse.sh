@@ -12,17 +12,18 @@ today="$(date +%F)"
 copy="$(command -v xclip || command -v pbcopy)"
 gpg="$(command -v gpg || command -v gpg2)"
 gpg_conf="${GNUPGHOME}/gpg.conf"
-pass_chars="[:alnum:]!?@#$%^&*();:+="
 
 clip_dest="${PURSE_DEST:=clipboard}"   # set to 'screen' to print to stdout
 clip_timeout="${PURSE_TIME:=10}"       # seconds to clear clipboard/screen
 comment="${PURSE_COMMENT:=}"           # *unencrypted* comment in files
 daily_backup="${PURSE_DAILY:=}"        # daily backup archive on write
 pass_copy="${PURSE_COPY:=}"            # copy password before write
+pass_echo="${PURSE_ECHO:=*}"           # show "*" when typing passwords
 pass_len="${PURSE_LEN:=14}"            # default password length
 safe_dir="${PURSE_SAFE:=safe}"         # safe directory name
 safe_ix="${PURSE_INDEX:=purse.index}"  # index file name
 safe_backup="${PURSE_BACKUP:=purse.$(hostname).${today}.tar}"
+pass_chars="${PURSE_CHARS:='[:alnum:]!?@#$%^&*();:+='}"
 
 trap cleanup EXIT INT TERM
 cleanup () {
@@ -62,7 +63,7 @@ get_pass () {
         password="${password%?}"
       fi
     else
-      prompt="*"
+      prompt="${pass_echo}"
       password+="${char}"
     fi
   done
