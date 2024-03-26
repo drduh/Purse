@@ -17,6 +17,7 @@ clip_dest="${PURSE_DEST:=clipboard}"   # set to 'screen' to print to stdout
 clip_timeout="${PURSE_TIME:=10}"       # seconds to clear clipboard/screen
 comment="${PURSE_COMMENT:=}"           # *unencrypted* comment in files
 daily_backup="${PURSE_DAILY:=}"        # daily backup archive on write
+encrypt_index="${PURSE_ENCIX:=}"       # also keep index encrypted
 pass_copy="${PURSE_COPY:=}"            # copy password before write
 pass_echo="${PURSE_ECHO:=*}"           # show "*" when typing passwords
 pass_len="${PURSE_LEN:=14}"            # default password length
@@ -290,7 +291,6 @@ fi
 username=""
 password=""
 action=""
-encrypt_index=""
 
 if [[ -n "${1+x}" ]] ; then action="${1}" ; fi
 

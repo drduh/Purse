@@ -72,8 +72,9 @@ Variable | Description | Default | Values
 `PURSE_LEN` | default generated password length | `14` | any valid integer
 `PURSE_COPY` | copy password to clipboard before write | unset (disabled) | `1` or `true` to enable
 `PURSE_DAILY` | create daily backup archive on write | unset (disabled) | `1` or `true` to enable
-`PURSE_CHARS` | character set for passwords | `[:alnum:]!?@#$%^&*();:+=` | any valid characters
+`PURSE_ENCIX` | also encrypte index for additional privacy ; 2 YubiKey touches will be required for separate decryption operations | unset (disabled) | `1` or `true` to enable
 `PURSE_COMMENT` | **unencrypted** comment to include in index and safe files | unset | any valid string
+`PURSE_CHARS` | character set for passwords | `[:alnum:]!?@#$%^&*();:+=` | any valid characters
 `PURSE_DEST` | password output destination, will set to `screen` without clipboard | `clipboard` | `clipboard` or `screen`
 `PURSE_ECHO` | character used to echo password input | `*` | any valid character
 `PURSE_SAFE` | safe directory name | `safe` | any valid string
@@ -82,6 +83,6 @@ Variable | Description | Default | Values
 
 **Note** For additional privacy, the recipient key ID is **not** included in metadata (GnuPG `throw-keyids` option).
 
-The password index file can also be encrypted by changing the `encrypt_index` variable to `true` in the script, however 2 YubiKey touches will be required (for 2 separate decryption operations).
+
 
 See [config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf) for additional GnuPG options.
