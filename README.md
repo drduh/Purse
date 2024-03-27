@@ -1,42 +1,34 @@
-# Purse
-
 Purse is a fork of [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
 
 Both programs are Bash shell scripts which use [GnuPG](https://www.gnupg.org/) to manage passwords and other secrets in encrypted text files. Purse is based on asymmetric (public-key) authentication, while pwd.sh is based on symmetric (password-based) authentication.
 
-While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk, only using shell built-ins), Purse eliminates the need to remember a master password - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
+While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk, only using shell built-ins), Purse eliminates the need to remember a main passphrase - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
 
-# Release notes
+# Install
 
-See [Releases](https://github.com/drduh/Purse/releases)
+This script requires a GnuPG identity - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up.
 
-# Use
-
-This script requires a GnuPG identity - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up. Multiple identities stored on several YubiKeys are recommended for improved durability and reliability.
-
-Clone the repository:
+For the latest version, clone the repository or download the script directly:
 
 ```console
 git clone https://github.com/drduh/Purse
-```
 
-Or download the script directly:
-
-```console
 wget https://github.com/drduh/Purse/blob/master/purse.sh
 ```
 
+Versioned [Releases](https://github.com/drduh/Purse/releases) are also available.
+
+# Use
+
 Run the script interactively using `./purse.sh` or symlink to a directory in `PATH`:
 
-* Type `w` to write a password
-* Type `r` to read a password
-* Type `l` to list passwords
-* Type `b` to create an archive for backup
-* Type `h` to print the help text
+- `w` to write a password
+- `r` to read a password
+- `l` to list passwords
+- `b` to create an archive for backup
+- `h` to print the help text
 
 Options can also be passed on the command line.
-
-Example usage:
 
 Create a 20-character password for `userName`:
 
@@ -50,7 +42,7 @@ Read password for `userName`:
 ./purse.sh r userName
 ```
 
-Passwords are stored with a timestamp for revision control. The most recent version is copied to clipboard on read. To list all passwords or read a specific version of a password:
+Passwords are stored with an epoch timestamp for revision control. The most recent version is copied to clipboard on read. To list all passwords or read a specific version of a password:
 
 ```console
 ./purse.sh l
@@ -70,8 +62,27 @@ Restore an archive from backup:
 tar xvf purse*tar
 ```
 
-**Note** For additional privacy, the recipient key ID is **not** included in metadata (`throw-keyids` option).
+# Configure
 
-The password index file can also be encrypted by changing the `encrypt_index` variable to `true` in the script, although two touches will be required for two separate decryption operations.
+Several customizable options and features are also available, and can be configured with environment variables, for example in the [shell rc](https://github.com/drduh/config/blob/master/zshrc) file:
 
-See [config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf) for additional configuration options.
+Variable | Description | Default | Values
+-|-|-|-
+`PURSE_TIME` | seconds to clear password from clipboard/screen | `10` | any valid integer
+`PURSE_LEN` | default generated password length | `14` | any valid integer
+`PURSE_COPY` | copy password to clipboard before write | unset (disabled) | `1` or `true` to enable
+`PURSE_DAILY` | create daily backup archive on write | unset (disabled) | `1` or `true` to enable
+`PURSE_ENCIX` | encrypt index for additional privacy; 2 YubiKey touches will be required for separate decryption operations | unset (disabled) | `1` or `true` to enable
+`PURSE_COMMENT` | **unencrypted** comment to include in index and safe files | unset | any valid string
+`PURSE_CHARS` | character set for passwords | `[:alnum:]!?@#$%^&*();:+=` | any valid characters
+`PURSE_DEST` | password output destination, will set to `screen` without clipboard | `clipboard` | `clipboard` or `screen`
+`PURSE_ECHO` | character used to echo password input | `*` | any valid character
+`PURSE_SAFE` | safe directory name | `safe` | any valid string
+`PURSE_INDEX` | index file name | `purse.index` | any valid string
+`PURSE_BACKUP` | backup archive file name | `purse.$hostname.$today.tar` | any valid string
+
+**Note** For additional privacy, the recipient key ID is **not** included in metadata (GnuPG `throw-keyids` option).
+
+
+
+See [config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf) for additional GnuPG options.
