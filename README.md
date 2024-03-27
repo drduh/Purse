@@ -2,7 +2,7 @@ Purse is a fork of [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
 
 Both programs are Bash shell scripts which use [GnuPG](https://www.gnupg.org/) to manage passwords and other secrets in encrypted text files. Purse is based on asymmetric (public-key) authentication, while pwd.sh is based on symmetric (password-based) authentication.
 
-While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk, only using shell built-ins), Purse eliminates the need to remember a master password - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
+While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk, only using shell built-ins), Purse eliminates the need to remember a main passphrase - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
 
 # Install
 
@@ -72,7 +72,7 @@ Variable | Description | Default | Values
 `PURSE_LEN` | default generated password length | `14` | any valid integer
 `PURSE_COPY` | copy password to clipboard before write | unset (disabled) | `1` or `true` to enable
 `PURSE_DAILY` | create daily backup archive on write | unset (disabled) | `1` or `true` to enable
-`PURSE_ENCIX` | also encrypte index for additional privacy ; 2 YubiKey touches will be required for separate decryption operations | unset (disabled) | `1` or `true` to enable
+`PURSE_ENCIX` | encrypt index for additional privacy; 2 YubiKey touches will be required for separate decryption operations | unset (disabled) | `1` or `true` to enable
 `PURSE_COMMENT` | **unencrypted** comment to include in index and safe files | unset | any valid string
 `PURSE_CHARS` | character set for passwords | `[:alnum:]!?@#$%^&*();:+=` | any valid characters
 `PURSE_DEST` | password output destination, will set to `screen` without clipboard | `clipboard` | `clipboard` or `screen`
