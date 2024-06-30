@@ -9,10 +9,11 @@ export LC_ALL="C"
 
 now="$(date +%s)"
 today="$(date +%F)"
-copy="$(command -v xclip || command -v pbcopy)"
 gpg="$(command -v gpg || command -v gpg2)"
-gpg_conf="${GNUPGHOME}/gpg.conf"
+gpg_conf="${HOME}/.gnupg/gpg.conf"
 
+copy="${PWDSH_CLIP:=xclip}"            # clipboard, 'pbcopy' on macOS
+copy_args=${PWDSH_COPY_ARGS:=}         # args to pass to copy command
 clip_dest="${PURSE_DEST:=clipboard}"   # set to 'screen' to print to stdout
 clip_timeout="${PURSE_TIME:=10}"       # seconds to clear clipboard/screen
 comment="${PURSE_COMMENT:=}"           # *unencrypted* comment in files
@@ -31,8 +32,7 @@ cleanup () {
   # "Lock" files on trapped exits.
 
   ret=$?
-  chmod -R 0000 \
-    "${safe_dir}" "${safe_ix}" 2>/dev/null
+  chmod -R 0000 "${safe_dir}" "${safe_ix}" 2>/dev/null
   exit ${ret}
 }
 
@@ -49,9 +49,33 @@ warn () {
   tput setaf 3 ; printf "\nWARNING: %s\n" "${1}" ; tput sgr0
 }
 
+setup_keygroup() {
+  # Configure one or more recipients.
+
+  purse_keygroup="group purse_keygroup ="
+  keyid=""
+  recommend="$(${gpg} -K | grep "sec#" | \
+    awk -F "/" '{print $2}' | cut -c-18 | tr "\n" " ")"
+
+  printf "\n  Setting up keygroup ...\n
+  Found recommended key IDs: %s\n
+  Enter one or more key IDs, preferred one last\n" "${recommend}"
+
+  while [[ -z "${keyid}" ]] ; do read -r -p "
+  Key ID or Enter to continue: " keyid
+    if [[ -z "${keyid}" ]] ; then
+      printf "%s\n" "${purse_keygroup}" >> "${gpg_conf}"
+      break
+    fi
+    purse_keygroup="${purse_keygroup} ${keyid}"
+    keyid=""
+  done
+}
+
 get_pass () {
   # Prompt for a password.
 
+  password=""
   prompt="  ${1}"
   printf "\n"
 
@@ -105,20 +129,19 @@ read_pass () {
     tail -1 | cut -d ":" -f2)
   fi
 
+  if [[ ! -s "${spath}" ]] ; then
+    fail "Secret not available" ; fi
+
   prompt_key "password"
-  if [[ -s "${spath}" ]] ; then
-    clip <(decrypt "${spath}" | head -1) || \
-      fail "Failed to decrypt ${spath}"
-  else fail "Secret not available"
-  fi
+  clip <(decrypt "${spath}" | head -1) || \
+    fail "Failed to decrypt ${spath}"
 }
 
 prompt_key () {
   # Print a message if safe file exists.
 
   if [[ -f "${safe_ix}" ]] ; then
-    printf "\n  Touch key to access %s ...\n" "${1}"
-  fi
+    printf "\n  Touch key to access %s ...\n" "${1}" ; fi
 }
 
 gen_pass () {
@@ -129,11 +152,20 @@ gen_pass () {
   else length="${3}" ; fi
 
   if [[ "${length}" =~ ^[0-9]+$ ]] ; then
-    pass_len="${length}"
-  fi
+    pass_len="${length}" ; fi
 
   tr -dc "${pass_chars}" < /dev/urandom | \
     fold -w "${pass_len}" | head -1
+}
+
+gen_user () {
+  # Generate a username.
+
+  printf "%s%s\n" \
+    "$(awk 'length > 2 && length < 12 {print(tolower($0))}' \
+    /usr/share/dict/words | grep -v "'" | sort -R | head -n2 | \
+    tr "\n" "_" | iconv -f utf-8 -t ascii//TRANSLIT)" \
+    "$(tr -dc "[:digit:]" < /dev/urandom | fold -w 4 | head -1)"
 }
 
 write_pass () {
@@ -143,11 +175,9 @@ write_pass () {
     fold -w10 | head -1)"
 
   if [[ -n "${pass_copy}" ]] ; then
-    clip <(printf '%s' "${userpass}")
-  fi
+    clip <(printf '%s' "${userpass}") ; fi
 
-  printf '%s\n' "${userpass}" | \
-    encrypt "${spath}" - || \
+  printf '%s\n' "${userpass}" | encrypt "${spath}" - || \
       fail "Failed saving ${spath}"
 
   if [[ -n "${encrypt_index}" ]] ; then
@@ -208,37 +238,15 @@ clip () {
   else printf "\n" ; printf "" | "${copy}" ; fi
 }
 
-setup_keygroup() {
-  # Configure one or more recipients.
-
-  purse_keygroup="group purse_keygroup ="
-  keyid=""
-  recommend="$(${gpg} -K | grep "sec#" | \
-    awk -F "/" '{print $2}' | cut -c-18 | tr "\n" " ")"
-
-  printf "\n  Setting up keygroup ...\n
-  Found recommended key IDs: %s\n
-  Enter one or more key IDs, preferred one last\n" "${recommend}"
-
-  while [[ -z "${keyid}" ]] ; do read -r -p "
-  Key ID or Enter to continue: " keyid
-    if [[ -z "${keyid}" ]] ; then
-      printf "%s\n" "${purse_keygroup}" >> "${gpg_conf}"
-      break
-    fi
-    purse_keygroup="${purse_keygroup} ${keyid}"
-    keyid=""
-  done
-}
-
 new_entry () {
   # Prompt for username and password.
 
-  while [[ -z "${username}" ]] ; do
-    if [[ -z "${2+x}" ]] ; then read -r -p "
-  Username: " username
-    else username="${2}" ; fi
-  done
+  if [[ -z "${2+x}" ]] ; then read -r -p "
+  Username (Enter to generate): " username
+  else username="${2}" ; fi
+  if [[ -z "${username}" ]] ; then
+    username=$(gen_user "$@")
+  fi
 
   if [[ -z "${3+x}" ]] ; then
     get_pass "Password for \"${username}\" (Enter to generate): "
@@ -283,9 +291,11 @@ if [[ ! -d "${safe_dir}" ]] ; then mkdir -p "${safe_dir}" ; fi
 
 chmod -R 0700 "${safe_dir}" "${safe_ix}" 2>/dev/null
 
-if [[ -z "${copy}" || ! -x "${copy}" ]] ; then
+if [[ -z "$(command -v ${copy})" ]] ; then
   warn "Clipboard not available, passwords will print to screen/stdout!"
   clip_dest="screen"
+elif [[ -n "${copy_args}" ]] ; then
+  copy+=" ${copy_args}"
 fi
 
 username=""
