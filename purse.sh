@@ -10,10 +10,10 @@ export LC_ALL="C"
 now="$(date +%s)"
 today="$(date +%F)"
 gpg="$(command -v gpg || command -v gpg2)"
-gpg_conf="${HOME}/.gnupg/gpg.conf"
+gpg_conf="${GNUPGHOME}/gpg.conf"
 
-copy="${PWDSH_CLIP:=xclip}"            # clipboard, 'pbcopy' on macOS
-copy_args=${PWDSH_COPY_ARGS:=}         # args to pass to copy command
+clip="${PWDSH_CLIP:=xclip}"            # clipboard, 'pbcopy' on macOS
+clip_args=${PWDSH_CLIP_ARGS:=}         # args to pass to copy command
 clip_dest="${PURSE_DEST:=clipboard}"   # set to 'screen' to print to stdout
 clip_timeout="${PURSE_TIME:=10}"       # seconds to clear clipboard/screen
 comment="${PURSE_COMMENT:=}"           # *unencrypted* comment in files
@@ -144,7 +144,7 @@ prompt_key () {
     printf "\n  Touch key to access %s ...\n" "${1}" ; fi
 }
 
-gen_pass () {
+generate_pass () {
   # Generate a password from urandom.
 
   if [[ -z "${3+x}" ]] ; then read -r -p "
@@ -158,7 +158,7 @@ gen_pass () {
     fold -w "${pass_len}" | head -1
 }
 
-gen_user () {
+generate_user () {
   # Generate a username.
 
   printf "%s%s\n" \
@@ -225,7 +225,7 @@ clip () {
 
   if [[ "${clip_dest}" = "screen" ]] ; then
     printf '\n%s\n' "$(cat ${1})"
-  else "${copy}" < "${1}" ; fi
+  else ${clip} < "${1}" ; fi
 
   printf "\n"
   while [[ "${clip_timeout}" -gt 0 ]] ; do
@@ -235,7 +235,7 @@ clip () {
   printf "\r\033[K  Clearing password from %s ..." "${clip_dest}"
 
   if [[ "${clip_dest}" = "screen" ]] ; then clear
-  else printf "\n" ; printf "" | "${copy}" ; fi
+  else printf "\n" ; printf "" | ${clip} ; fi
 }
 
 new_entry () {
@@ -245,7 +245,7 @@ new_entry () {
   Username (Enter to generate): " username
   else username="${2}" ; fi
   if [[ -z "${username}" ]] ; then
-    username=$(gen_user "$@")
+    username=$(generate_user "$@")
   fi
 
   if [[ -z "${3+x}" ]] ; then
@@ -255,7 +255,7 @@ new_entry () {
 
   printf "\n"
   if [[ -z "${password}" ]] ; then
-    userpass=$(gen_pass "$@")
+    userpass=$(generate_pass "$@")
   fi
 }
 
@@ -291,11 +291,11 @@ if [[ ! -d "${safe_dir}" ]] ; then mkdir -p "${safe_dir}" ; fi
 
 chmod -R 0700 "${safe_dir}" "${safe_ix}" 2>/dev/null
 
-if [[ -z "$(command -v ${copy})" ]] ; then
+if [[ -z "$(command -v ${clip})" ]] ; then
   warn "Clipboard not available, passwords will print to screen/stdout!"
   clip_dest="screen"
-elif [[ -n "${copy_args}" ]] ; then
-  copy+=" ${copy_args}"
+elif [[ -n "${clip_args}" ]] ; then
+  clip+=" ${clip_args}"
 fi
 
 username=""
