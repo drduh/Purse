@@ -68,6 +68,8 @@ Several customizable options and features are also available, and can be configu
 
 Variable | Description | Default | Values
 -|-|-|-
+`PURSE_CLIP` | clipboard to use | `xclip` | `pbcopy` on macOS
+`PURSE_CLIP_ARGS` | arguments to pass to clipboard command | unset (disabled) | `-i -selection clipboard` to use primary (control-v) clipboard with xclip
 `PURSE_TIME` | seconds to clear password from clipboard/screen | `10` | any valid integer
 `PURSE_LEN` | default generated password length | `14` | any valid integer
 `PURSE_COPY` | copy password to clipboard before write | unset (disabled) | `1` or `true` to enable
