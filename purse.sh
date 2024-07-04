@@ -10,7 +10,7 @@ export LC_ALL="C"
 now="$(date +%s)"
 today="$(date +%F)"
 gpg="$(command -v gpg || command -v gpg2)"
-gpg_conf="${GNUPGHOME}/gpg.conf"
+gpg_conf="${HOME}/.gnupg/gpg.conf"
 
 clip="${PWDSH_CLIP:=xclip}"            # clipboard, 'pbcopy' on macOS
 clip_args=${PWDSH_CLIP_ARGS:=}         # args to pass to copy command
