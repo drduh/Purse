@@ -133,7 +133,7 @@ read_pass () {
     fail "Secret not available" ; fi
 
   prompt_key "password"
-  clip <(decrypt "${spath}" | head -1) || \
+  emit_pass <(decrypt "${spath}" | head -1) || \
     fail "Failed to decrypt ${spath}"
 }
 
@@ -152,7 +152,8 @@ generate_pass () {
   else length="${3}" ; fi
 
   if [[ "${length}" =~ ^[0-9]+$ ]] ; then
-    pass_len="${length}" ; fi
+    pass_len="${length}"
+  fi
 
   tr -dc "${pass_chars}" < /dev/urandom | \
     fold -w "${pass_len}" | head -1
@@ -175,7 +176,7 @@ write_pass () {
     fold -w10 | head -1)"
 
   if [[ -n "${pass_copy}" ]] ; then
-    clip <(printf '%s' "${userpass}") ; fi
+    emit_pass <(printf '%s' "${userpass}") ; fi
 
   printf '%s\n' "${userpass}" | encrypt "${spath}" - || \
       fail "Failed saving ${spath}"
@@ -220,7 +221,7 @@ backup () {
   else warn "${safe_backup} exists, skipping archive" ; fi
 }
 
-clip () {
+emit_pass () {
   # Use clipboard or stdout and clear after timeout.
 
   if [[ "${clip_dest}" = "screen" ]] ; then

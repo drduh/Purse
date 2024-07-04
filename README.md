@@ -66,7 +66,7 @@ tar xvf purse*tar
 
 Several customizable options and features are also available, and can be configured with environment variables, for example in the [shell rc](https://github.com/drduh/config/blob/master/zshrc) file:
 
-Variable | Description | Default | Values
+Variable | Description | Default | Available options
 -|-|-|-
 `PURSE_CLIP` | clipboard to use | `xclip` | `pbcopy` on macOS
 `PURSE_CLIP_ARGS` | arguments to pass to clipboard command | unset (disabled) | `-i -selection clipboard` to use primary (control-v) clipboard with xclip
