@@ -12,8 +12,8 @@ today="$(date +%F)"
 gpg="$(command -v gpg || command -v gpg2)"
 gpg_conf="${HOME}/.gnupg/gpg.conf"
 
-clip="${PWDSH_CLIP:=xclip}"            # clipboard, 'pbcopy' on macOS
-clip_args=${PWDSH_CLIP_ARGS:=}         # args to pass to copy command
+clip="${PURSE_CLIP:=xclip}"            # clipboard, 'pbcopy' on macOS
+clip_args=${PURSE_CLIP_ARGS:=}         # args to pass to copy command
 clip_dest="${PURSE_DEST:=clipboard}"   # set to 'screen' to print to stdout
 clip_timeout="${PURSE_TIME:=10}"       # seconds to clear clipboard/screen
 comment="${PURSE_COMMENT:=}"           # *unencrypted* comment in files
@@ -210,7 +210,7 @@ list_entry () {
 backup () {
   # Archive index, safe and configuration.
 
-  if [[ ! -f ${safe_backup} ]] ; then
+  if [[ ! -f "${safe_backup}" ]] ; then
     if [[ -f "${safe_ix}" && -d "${safe_dir}" ]] ; then
       cp "${gpg_conf}" "gpg.conf.${today}"
       tar cf "${safe_backup}" "${safe_dir}" "${safe_ix}" \
@@ -246,18 +246,15 @@ new_entry () {
   Username (Enter to generate): " username
   else username="${2}" ; fi
   if [[ -z "${username}" ]] ; then
-    username=$(generate_user "$@")
-  fi
+    username=$(generate_user "$@") ; fi
 
   if [[ -z "${3+x}" ]] ; then
     get_pass "Password for \"${username}\" (Enter to generate): "
-    userpass="${password}"
-  fi
+    userpass="${password}" ; fi
 
   printf "\n"
   if [[ -z "${password}" ]] ; then
-    userpass=$(generate_pass "$@")
-  fi
+    userpass=$(generate_pass "$@") ; fi
 }
 
 print_help () {
