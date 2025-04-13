@@ -22,10 +22,10 @@ Versioned [Releases](https://github.com/drduh/Purse/releases) are also available
 
 Run the script interactively using `./purse.sh` or symlink to a directory in `PATH`:
 
-- `w` to write a password
-- `r` to read a password
-- `l` to list passwords
-- `b` to create an archive for backup
+- `w` to create a secret
+- `r` to access a secret
+- `l` to list all secrets
+- `b` to create a backup archive
 - `h` to print the help text
 
 Options can also be passed on the command line.
@@ -64,6 +64,8 @@ tar xvf purse*tar
 
 # Configure
 
+See [config/gpg.conf](https://github.com/drduh/config/blob/main/gpg.conf) for recommended GnuPG options.
+
 Several customizable options and features are also available, and can be configured with environment variables, for example in the [shell rc](https://github.com/drduh/config/blob/main/zshrc) file:
 
 Variable | Description | Default | Available options
@@ -83,6 +85,5 @@ Variable | Description | Default | Available options
 `PURSE_INDEX` | index file name | `purse.index` | any valid string
 `PURSE_BACKUP` | backup archive file name | `purse.$hostname.$today.tar` | any valid string
 
-**Note** For additional privacy, the recipient key ID is **not** included in metadata (using the GnuPG `throw-keyids` option).
-
-See [config/gpg.conf](https://github.com/drduh/config/blob/main/gpg.conf) for additional GnuPG options.
+> [!NOTE]
+> For privacy, the recipient key ID is **not** included in metadata (using the GnuPG `throw-keyids` option).
