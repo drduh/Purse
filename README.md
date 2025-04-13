@@ -1,12 +1,12 @@
-Purse is a fork of [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
+Purse is a based on [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
 
-Both programs are Bash shell scripts which use [GnuPG](https://www.gnupg.org/) to manage passwords and other secrets in encrypted text files. Purse is based on asymmetric (public-key) authentication, while pwd.sh is based on symmetric (password-based) authentication.
+Both programs are Bash shell scripts which use [GnuPG](https://www.gnupg.org/) to manage secrets in encrypted text files. Purse is based on asymmetric (public-key) authentication, while [pwd.sh](https://github.com/drduh/pwd.sh) is based on symmetric (passphrase-based) authentication.
 
-While both scripts use a trusted crypto implementation (GnuPG) and safely handle passwords (never saving plaintext to disk, only using shell built-ins), Purse eliminates the need to remember a main passphrase - just plug in a YubiKey, enter the PIN, then touch it to decrypt a password to clipboard.
+Purse eliminates the need to remember a passphrase: plug in the YubiKey, enter PIN and touch it to access secrets.
 
 # Install
 
-This script requires a GnuPG identity - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up.
+Purse requires a GnuPG identity - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up.
 
 For the latest version, clone the repository or download the script directly:
 
@@ -67,7 +67,7 @@ tar xvf purse*tar
 Several customizable options and features are also available, and can be configured with environment variables, for example in the [shell rc](https://github.com/drduh/config/blob/main/zshrc) file:
 
 Variable | Description | Default | Available options
--|-|-|-
+---: | :---: | :---: | :---
 `PURSE_CLIP` | clipboard to use | `xclip` | `pbcopy` on macOS
 `PURSE_CLIP_ARGS` | arguments to pass to clipboard command | unset (disabled) | `-i -selection clipboard` to use primary (control-v) clipboard with xclip
 `PURSE_TIME` | seconds to clear password from clipboard/screen | `10` | any valid integer
