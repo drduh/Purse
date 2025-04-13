@@ -64,7 +64,7 @@ tar xvf purse*tar
 
 # Configure
 
-Several customizable options and features are also available, and can be configured with environment variables, for example in the [shell rc](https://github.com/drduh/config/blob/master/zshrc) file:
+Several customizable options and features are also available, and can be configured with environment variables, for example in the [shell rc](https://github.com/drduh/config/blob/main/zshrc) file:
 
 Variable | Description | Default | Available options
 -|-|-|-
@@ -83,8 +83,6 @@ Variable | Description | Default | Available options
 `PURSE_INDEX` | index file name | `purse.index` | any valid string
 `PURSE_BACKUP` | backup archive file name | `purse.$hostname.$today.tar` | any valid string
 
-**Note** For additional privacy, the recipient key ID is **not** included in metadata (GnuPG `throw-keyids` option).
+**Note** For additional privacy, the recipient key ID is **not** included in metadata (using the GnuPG `throw-keyids` option).
 
-
-
-See [config/gpg.conf](https://github.com/drduh/config/blob/master/gpg.conf) for additional GnuPG options.
+See [config/gpg.conf](https://github.com/drduh/config/blob/main/gpg.conf) for additional GnuPG options.
