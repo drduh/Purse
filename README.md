@@ -1,22 +1,19 @@
-Purse is a based on [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
+Purse is a Bash shell script based on [drduh/pwd.sh](https://github.com/drduh/pwd.sh).
 
-Both programs are Bash shell scripts which use [GnuPG](https://www.gnupg.org/) to manage secrets in encrypted text files. Purse is based on asymmetric (public-key) authentication, while [pwd.sh](https://github.com/drduh/pwd.sh) is based on symmetric (passphrase-based) authentication.
+Both programs use [GnuPG](https://www.gnupg.org/) to manage secrets in encrypted text files. Purse is based on asymmetric (public-key) authentication, while [pwd.sh](https://github.com/drduh/pwd.sh) is based on symmetric (passphrase-based) authentication.
 
-Purse eliminates the need to remember a passphrase: plug in the YubiKey, enter PIN and touch it to access secrets.
+Purse eliminates the need for a passphrase: plug in the YubiKey, enter PIN and touch it to access secrets.
+
+> [!IMPORTANT]
+> A GnuPG identity is required to use Purse - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up.
 
 # Install
 
-Purse requires a GnuPG identity - see [drduh/YubiKey-Guide](https://github.com/drduh/YubiKey-Guide) to set one up.
-
-For the latest version, clone the repository or download the script directly:
+Purse is available for download from [Releases](https://github.com/drduh/Purse/releases), or directly from GitHub:
 
 ```console
-git clone https://github.com/drduh/Purse
-
 wget https://github.com/drduh/Purse/blob/master/purse.sh
 ```
-
-Versioned [Releases](https://github.com/drduh/Purse/releases) are also available.
 
 # Use
 
